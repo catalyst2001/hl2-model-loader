@@ -1,0 +1,349 @@
+
+<!-- saved from url=(0077)http://web.archive.org/web/20050428082221/http://www.planetquake.com/qxx/bsp/ -->
+<html class=""><head><meta http-equiv="Content-Type" content="text/html; charset=windows-1252"><script src="./BSP technical details for Dummies_files/analytics.js.&#1041;&#1077;&#1079; &#1085;&#1072;&#1079;&#1074;&#1072;&#1085;&#1080;&#1103;" type="text/javascript"></script>
+<script type="text/javascript">window.addEventListener('DOMContentLoaded',function(){var v=archive_analytics.values;v.service='wb';v.server_name='wwwb-app216.us.archive.org';v.server_ms=545;archive_analytics.send_pageview({});});</script>
+<script type="text/javascript" src="./BSP technical details for Dummies_files/bundle-playback.js.&#1041;&#1077;&#1079; &#1085;&#1072;&#1079;&#1074;&#1072;&#1085;&#1080;&#1103;" charset="utf-8"></script>
+<script type="text/javascript" src="./BSP technical details for Dummies_files/wombat.js.&#1041;&#1077;&#1079; &#1085;&#1072;&#1079;&#1074;&#1072;&#1085;&#1080;&#1103;" charset="utf-8"></script>
+<script type="text/javascript">
+  __wm.init("http://web.archive.org/web");
+  __wm.wombat("http://www.planetquake.com:80/qxx/bsp/","20050428082221","http://web.archive.org/","web","/_static/",
+	      "1114676541");
+</script>
+<link rel="stylesheet" type="text/css" href="./BSP technical details for Dummies_files/banner-styles.css">
+<link rel="stylesheet" type="text/css" href="./BSP technical details for Dummies_files/iconochive.css">
+<!-- End Wayback Rewrite JS Include -->
+<script language="javascript">document.write("<"+"script type='text/javascript' src='http://web.archive.org/web/20050428082221/http://wrapper.gamespyid.com/a?pagetype=unmatched&size=prestitial?%R'>");document.write("<"+"/script>");</script><script type="text/javascript" src="./BSP technical details for Dummies_files/a"></script><script src="./BSP technical details for Dummies_files/AAMSZ=PRESTITIAL"></script>
+<!-- BEGIN WAYBACK TOOLBAR INSERT -->
+<style type="text/css">
+body {
+  margin-top:0 !important;
+  padding-top:0 !important;
+  /*min-width:800px !important;*/
+}
+</style>
+<script>__wm.rw(0);</script>
+<link type="text/css" rel="stylesheet" charset="UTF-8" href="./BSP technical details for Dummies_files/translateelement.css"></head><body text="#000000" bgcolor="#FFFFFF" link="#0000FF" vlink="#551A8B" alink="#0000FF"><div id="wm-ipp-base" lang="en" style="display: block; direction: ltr;">
+</div><div id="wm-ipp-print">The Wayback Machine - http://web.archive.org/web/20050428082221/http://www.planetquake.com:80/qxx/bsp/</div>
+<script type="text/javascript">//<![CDATA[
+__wm.bt(675,27,25,2,"web","http://www.planetquake.com/qxx/bsp/","20050428082221",1996,"/_static/",["/_static/css/banner-styles.css?v=fantwOh2","/_static/css/iconochive.css?v=qtvMKcIJ"], false);
+  __wm.rw(1);
+//]]></script>
+<!-- END WAYBACK TOOLBAR INSERT -->
+
+   
+   
+   <meta name="GENERATOR" content="Mozilla/4.61 (Macintosh; I; PPC) [Netscape]">
+   <title>BSP technical details for Dummies</title>
+<script src="./BSP technical details for Dummies_files/AAMSZ=PRESTITIAL(1)"></script>
+
+
+
+<center><img src="./BSP technical details for Dummies_files/fordummies.gif" nosave="" border="0" height="42" width="324"><br>
+<b>A simplified yet complete explanation of BSP trees and their uses</b></center>
+<hr width="100%" size="2">
+I've seen several people ask a lot of things about the technical aspects
+of the BSP tree structure, the CSG process, etc.
+<br>Well, I decided to write a simple document detailing how many of the
+technical aspects work, in the approximate order of complexity.&nbsp; These
+rules apply to almost any game using BSP trees for geometry, and I'll be
+covering how many of those aspects work.
+<br>
+<hr width="100%" size="2"><b>Q:</b> What is "BSP" in the first place?
+<br><b>A:</b> BSP is an acronym for Binary Space Partitioning, which is
+an efficient way of doing many things in a 2D or 3D world, including location
+approximation, sorted rendering, and collision detection.
+<p>To understand what binary space partitioning is, break down the word
+into its pieces: Partitioning, or separation, binary, or two, as in two-sided,
+and space, or existantial area.&nbsp; Basically, binary space partitioning
+means cutting up space into sides, and every part of the world is on a
+side of some partition, or divider.
+</p><p>Most game engines these days use a BSP tree, which is a simple two-child
+tree structure.&nbsp; To understand what this means, one must first be
+familiar with the tree structure in programming.&nbsp; Basically, a two-child
+tree looks something like this
+<br><img src="./BSP technical details for Dummies_files/tree.gif" alt="Two-child tree diagram" height="212" width="160">
+</p><p>Now, that obviously looks nothing like the world you see when you play,
+but that's how it appears to the engine.&nbsp; Basically, the head node
+contains everything in the entire world, and each node in turn has children.&nbsp;
+Some nodes have no children, which means they're called "leafs", just like
+leafs on a tree have no branches.
+<br>
+</p><hr width="100%" size="2"><b>Q:</b> How does this have anything to do with
+the 3D world?
+<br><b>A:</b> Each node (and leaf) branching off from a node higher up
+in the tree is separated by a plane, which is basically a flat invisible
+sheet in the world.&nbsp; Which side a point is on the side of that plane
+determines which way you search the tree when trying to find your location.
+<p>To better explain it, I'll make some diagrams representing a 2D world,
+using lines instead of planes.&nbsp; In these diagrams, white space represents
+empty space, gray represents solid space, and red lines represent BSP partitions.
+</p><p><img src="./BSP technical details for Dummies_files/room.gif" nosave="" border="0" height="216" width="333">
+</p><p>This is a simple, 4-sided room, with solid world outside.&nbsp; Now,
+there are 5 different places you could be in the world given that diagram,
+so those areas are the <b>leafs</b> in the tree diagram.&nbsp; Basically,
+within each <b>leaf</b> , there are no lines left to separate your location.&nbsp;
+However, a 4-sided room is kind of useless in the world of BSP, so let's
+add something to make it useful: A block.&nbsp; And that brings us to our
+next section:
+<br>
+</p><hr width="100%" size="2"><b>Q:</b> What's CSG mean and how is the BSP
+tree useful for location finding?
+<br><b>A:</b> CSG is an acronym for Constructive Solid Geometry.&nbsp;
+To understand it, once again, it's best to dissect the term.&nbsp; Constructive,
+meaning used to put together something more complex, solid, meaning an
+obstruction (in this case), and geometry, which means a mathematically-defined
+shape.&nbsp; Basically, constructive solid geometry is geometry used to
+construct a larger solid piece of geomtry.&nbsp; There are also "CSG operations",
+which are mathematical algorythms used on CSG pieces (commonly called <b>brushes</b>)
+to cause brushes to interact with each other and the world.
+<p>Important CSG operations include merging, subtracting, and cutting (a
+form of subtraction used in the BSP tree generation process).
+</p><p>In most editors now a days, a basic CSG unit is called a "brush", which
+is used to describe a single convex solid.&nbsp; Remember, it has to be
+convex.&nbsp; In other words, geometry with dents and such in it are not
+allowed:
+<br><img src="./BSP technical details for Dummies_files/oknotok.gif" alt="Good and Bad Brushes" nosave="" border="0" height="106" width="190">
+<br>The reason for this is that the second brush isn't a convex solid.&nbsp;
+In order for the engine to find out which leaf a point is in, that leaf
+has to be completely enclosed, and for many reasons, CSG operations won't
+work unless the same is true for the brushes.&nbsp; Take a look at the
+diagram below.&nbsp; The X marks a location which is behind one of the
+partitions, which means it could be considered outside of the brush, even
+though it's actually inside.
+<br><img src="./BSP technical details for Dummies_files/pointoffplane.gif" alt="Point off plane error" nosave="" border="0" height="162" width="351">
+</p><p>So, let's see what happens when a simple wedge is added to the example
+room:
+<br><img src="./BSP technical details for Dummies_files/roomwithwedge.gif" nosave="" border="0" height="216" width="333">
+</p><p>Unfortunately, this can't be done as-is, because the empty space needs
+to be sectioned off, divided only by partitions with nothing else inside
+it.&nbsp; So, to do this, a CSG subtraction of the empty space is done,
+generating partitions along the lines of the added brush:
+<br><img src="./BSP technical details for Dummies_files/roompostcsg.gif" nosave="" border="0" height="216" width="333">
+</p><p>One thing many avid mappers may notice is that the solid space is actually
+being "carved" just like solid brushes often can be in their favorite map
+editor.&nbsp; Only in this, it's empty space being carved.&nbsp; You see,
+in the engine, solid and empty space are treated equally, and every part
+of the level has to be sectioned off regardless of content.
+<br>
+</p><hr width="100%"><b>Q:</b> Okay, so how does a BSP tree get generated from
+this?
+<br><b>A:</b> Basically, a BSP tree is created by adding each partition
+to the tree one at a time.&nbsp; To reduce the number of cuts in the CSG
+operation, axial partitions, as in lines that only go horizontally or vertically,
+or in the 3D world, walls, floors, and other non-angled objects, are added
+first.&nbsp; Each time a partition is added, one of the leafs is split
+into a node, divided by the partition, eventually creating a finalized
+tree!
+<br><img src="./BSP technical details for Dummies_files/csganim.gif" border="0" height="243" width="675">
+<p>It's important to realize that any leaf can be split into a node, not
+just ones just created.&nbsp; If a wedge was added to Leaf 6, for example,
+Leaf 6 would become a node and be split into more leafs.
+<br>
+</p><hr width="100%">
+<br><b>Q:</b> How does the engine determine which leaf the player is in?
+<br><b>A:</b> It means that the program starts at the head node, and then
+goes down to one of the children, depending on which side of the partition
+the player is in.&nbsp; That node becomes the current node, and then the
+process is repeated, until the current node is a leaf, in which case the
+engine knows where the player is!
+<p>This process is called <b>recursing the BSP tree.</b>
+<br>
+</p><hr width="100%"><b>Q:</b> How are BSP trees used for collision detection?
+<br><b>A:</b> Well, the basic type of collision detection is line collision.&nbsp;
+Line collision just means a line is traced through the world until it hits
+something, or reaches its end point.
+<p>So how is the BSP tree used for this?&nbsp; Basically, by recursively
+checking leafs one-by-one starting from the start point and moving to the
+end.&nbsp; If one of the solid leafs has the line in it, then it's a hit.&nbsp;
+If not, it's a miss.
+</p><p>Let's take a look at the picture below:
+<br><img src="./BSP technical details for Dummies_files/trace.gif" nosave="" border="0" height="225" width="333">
+<br>In this picture, a line is being traced from a point in leaf 5 to leaf
+7, passing through leafs 8 and 6.
+</p><p>So here's the method for determining which leafs the <u>trace line</u>
+is passing through and in which order:
+</p><p>1. <b>Start:</b> Make the head node the current node.
+</p><p>2. <b>Side check:</b> If both the start and end of the <u>trace line</u>
+are on the same side of the current node's partition, then it means it
+doesn't cross over the partition, so no collision with any part of one
+side could be possible.&nbsp; The only possible collisions are ones that
+could occur on the side both are on, so mark the current node as "MISS",
+make the child that both the start and end are on the current node, and
+start step 2 over.
+</p><p>If the start and end are on different sides of the partition, then it
+means it crossed a node partition, so it might have collided with something.&nbsp;
+This needs to be checked, so move to step 3.
+</p><p>3. <b>Split check:</b> Step 3 is only reached if the <u>trace line</u>
+is split by a node partition.&nbsp; Since we're only interested in the
+first solid object (or leaf) the trace hits, the side the <u>start point</u>
+is on should be checked first.&nbsp; So, go down the tree on the side the
+<u>start
+point</u> is on, and do step 4.&nbsp; If that side's clear, then go down
+the side of the tree that the <u>end point</u> is on, and do step 4 there.&nbsp;
+If both sides checked out on step 4 and neither hit anything, then the
+trace didn't hit anything in the current node.&nbsp; Mark it off as "MISS"
+and go back up the tree from the current node.&nbsp; If you can't go up
+the tree any further, then <u>the trace is done</u>: It's either a hit
+or miss.
+</p><p>4. <b>Recursion or contents check:</b> Now, a single side of a partition
+is being checked to see if the line hits there.
+</p><p>If the side being checked is a leaf, then it means one side of the split
+check is done: If the leaf is empty, then the trace didn't hit on the side
+of the partition currently being checked, in which case mark the leaf as
+"MISS", go back up the tree, and back to step 3.&nbsp; If the leaf is solid,
+it hit, so mark the leaf as a "HIT", and mark the node above as a "HIT"
+too, then go back up the tree.
+</p><p>If the node being checked is not a leaf, then it has to be checked the
+same way the first one (the head node) was.&nbsp; So, make the node being
+checked the current node, and go to step 2.
+<br>&nbsp;
+</p><p>For anyone who's not a programmer, this may be a bit confusing.&nbsp;
+For anyone who is, here's a pseudo-program for determining it:
+</p><p><tt>checknode (currentnode)</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; if(currentnode is a leaf)</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if(currentnode contents
+are solid)</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+return HIT</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; else</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+return MISS</tt>
+</p><p><tt>&nbsp;&nbsp;&nbsp; if(side start is on = side end is on)</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return checknode (child
+of currentnode both sides are on)</tt>
+</p><p><tt>&nbsp;&nbsp;&nbsp; result1 = checknode (child of currentnode start
+is on)</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; result2 = checknode (child of currentnode end
+is on)</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; if(result1 does not equal result2)</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; nodehit = currentnode</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; if(result1 = HIT or result2 = HIT)</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return HIT</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; else</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return MISS</tt>
+<br>
+</p><hr width="100%"><b>Q:</b> How do I determine which partition the line
+hit, since its angle can be used for stuff like deflections?
+<br><b>A:</b> Basically, the highest node up on the tree where one side's
+got at least one hit and the other are all misses is the one whose partition
+the hit is on!
+<hr width="100%"><b>Q:</b> How are BSP trees used for sorted rendering?
+<br><b>A:</b> Since only leafs should have parts of them drawn, you can
+always find the most distant leafs from the player by recursing the tree
+and instead of picking the side the player is on, pick the side they're
+NOT on.&nbsp; This won't give you the leaf with the most space between
+them, but it will give you the one with the most leafs between it and the
+player!&nbsp; After a leaf has been rendered, just go back up the tree
+one step, go down the other child, and start over, until the entire tree
+has been rendered!
+<br>
+<hr width="100%"><b>Q:</b> What are clipping hulls?
+<br><b>A:</b> I already showed how BSP trees are useful for line traces,
+but those are only useful for simulating tiny objects like bullets.&nbsp;
+For larger objects, there are many ways to do collision, one of the first
+being using clipping hulls.
+<p>Basically, the idea behind a clipping hull is to make a collision check
+for a large object be done the same as a small object by creating a separate
+BSP tree with the walls caved in.&nbsp; In brush-based environments, this
+is easily achieved by just pushing the partitions of every brush outward,
+then rebuilding the BSP, then just tracing the center of the object through
+the new "hull".
+<br><img src="./BSP technical details for Dummies_files/clippinghull.gif" nosave="" border="0" height="190" width="500">
+</p><p>You may notice a problem with this though: Even though the walls have
+all been moved out the same distance, the player can no longer get past
+the block if he goes to the top of the map.&nbsp; This brings us to the
+next question:
+<br>
+</p><hr width="100%">
+<br><b>Q:</b> What are axial planes?
+<br><b>A:</b> Axial planes are partitions added to prevent blockages like
+the one shown above from occuring.
+<p>To make the problem more obvious, take this example:
+<br><img src="./BSP technical details for Dummies_files/hullproblem.gif" nosave="" border="0" height="162" width="459">
+</p><p>As you can see, the gap between the walls and the wedge are about the
+same, which means there should be a gap on both the top and bottom of the
+clipping hull, except there isn't.&nbsp; Even though the walls have been
+pushed out the same distance, the top edge is more acute, which makes it
+push out farther.&nbsp; There are several ways to solve this, but the easiest
+is to add axial planes, which in the 2D world go only horizontal and vertical,
+and in the 3D world are non-angled planes like walls and ceilings.
+</p><p>Here's what happens when axial planes are added to the brush:
+<br><img src="./BSP technical details for Dummies_files/hullfixed.gif" nosave="" border="0" height="162" width="459">
+</p><p>As you can see, there is now a gap at both the top and bottom, so the
+player could safely travel across both sides of the wedge.
+<br>
+</p><hr width="100%"><b>Q:</b> How is visibility determined in Quake-based engines?
+<br><b>A:</b> Even though it takes a long time, the way visibility is determined
+is actually pretty simple.
+<p>Take this semi-complex BSP below:
+<br><img src="./BSP technical details for Dummies_files/portals.gif" nosave="" border="0" height="261" width="450">
+</p><p>One of the things done during the BSP process in all Quake-based engines
+is portalization.&nbsp; During portalization, every separation of every
+leaf is converted into a portal.&nbsp; Ones that are opaque, such as wall
+surfaces and water in some engines, are considered opaque portals.&nbsp;
+Others are just used to determine visibility from the boundary areas of
+a leaf.
+</p><p>The way Quake's visibility processing works is by trying to create a
+"separating plane" for each pair of portals, which is basically a sheet
+or line that would put two portals on one side, and a third portal on the
+other.&nbsp; If that can be done, then the portal left standing alone is
+considered not in the way.&nbsp; If it happens, however, then that portal
+is considered in the way, which means the two portals can't see each other.
+</p><p>Here's approximately what would happen if the red portal was VIS'ed
+against the green portal:
+<br><img src="./BSP technical details for Dummies_files/redvsgreen.gif" nosave="" border="0" height="261" width="450">
+</p><p>As you can see from the magenta lines, there is no line that can be
+drawn separating the blue portal from the green one, so the blue portal
+is considered in the way.
+</p><p>When the orange portal is put against the red portal, however, it's
+different:
+<br><img src="./BSP technical details for Dummies_files/redvsorange.gif" nosave="" border="0" height="261" width="450">
+</p><p>The magenta line shown completely clips away the blue portal, while
+leaving the red and orange portals on the other side.&nbsp; This means
+that the blue portal is not in the way, and if no portals are in the way,
+then the red and orange portals can see each other.
+<br>
+</p><hr width="100%"><b>Q:</b> What are detail brushes?
+<br><b>A:</b> Detail brushes are something introduced in Quake 2 and carried
+over to Quake 3, and seen in many other engines.
+<p>Detail brushes essentially aren't included in the portal list when it's
+exported by the BSP utility, which means there's no way they can get in
+the way during the visibility process.&nbsp; However, in order for that
+to be truly effective, a "cluster" visibility system is needed.&nbsp; In
+a cluster system, instead of the visibility data telling the engine which
+leafs can see each other, it tells the engine which sets of leafs can see
+each other.&nbsp; Those sets are determined essentially by creating one
+BSP tree for the non-detail brushes, converting the leaf numbers to cluster
+numbers, CSG'ing in the detail brushes, and then determining which leafs
+the detail brushes occupy.&nbsp; Detail brushes don't cut portals either,
+and since portals are used to generate faces, they don't cut world polygons
+either.
+<br>
+</p><hr width="100%">
+<br>Sorry if this is rather incomplete, or even worse, horrendously ugly,
+but I figure the content should make up for the looks.&nbsp; Have fun!
+<br>Any questions about this guide, or questions to add to it?&nbsp; E-mail
+me!&nbsp; <a href="http://web.archive.org/web/20050428082221/mailto:riot@planetquake.com">riot@planetquake.com</a>
+
+
+<!--
+     FILE ARCHIVED ON 08:22:21 Apr 28, 2005 AND RETRIEVED FROM THE
+     INTERNET ARCHIVE ON 21:15:41 Sep 19, 2022.
+     JAVASCRIPT APPENDED BY WAYBACK MACHINE, COPYRIGHT INTERNET ARCHIVE.
+
+     ALL OTHER CONTENT MAY ALSO BE PROTECTED BY COPYRIGHT (17 U.S.C.
+     SECTION 108(a)(3)).
+-->
+<div id="goog-gt-tt" class="skiptranslate" dir="ltr"><div style="padding: 8px;"><div><div class="logo"><img src="./BSP technical details for Dummies_files/translate_24dp.png" width="20" height="20" alt="Google &#1055;&#1077;&#1088;&#1077;&#1074;&#1086;&#1076;&#1095;&#1080;&#1082;"></div></div></div><div class="top" style="padding: 8px; float: left; width: 100%;"><h1 class="title gray">&#1048;&#1089;&#1093;&#1086;&#1076;&#1085;&#1099;&#1081; &#1090;&#1077;&#1082;&#1089;&#1090;</h1></div><div class="middle" style="padding: 8px;"><div class="original-text"></div></div><div class="bottom" style="padding: 8px;"><div class="activity-links"><span class="activity-link">&#1055;&#1088;&#1077;&#1076;&#1083;&#1086;&#1078;&#1080;&#1090;&#1100; &#1083;&#1091;&#1095;&#1096;&#1080;&#1081; &#1074;&#1072;&#1088;&#1080;&#1072;&#1085;&#1090; &#1087;&#1077;&#1088;&#1077;&#1074;&#1086;&#1076;&#1072;</span><span class="activity-link"></span></div><div class="started-activity-container"><hr style="color: #CCC; background-color: #CCC; height: 1px; border: none;"><div class="activity-root"></div></div></div><div class="status-message" style="display: none;"></div></div><!--
+playback timings (ms):
+  captures_list: 418.304
+  exclusion.robots: 0.196
+  exclusion.robots.policy: 0.189
+  cdx.remote: 0.061
+  esindex: 0.009
+  LoadShardBlock: 375.406 (3)
+  PetaboxLoader3.datanode: 398.42 (4)
+  CDXLines.iter: 12.263 (3)
+  load_resource: 121.571
+  PetaboxLoader3.resolve: 34.433
+--><div class="goog-te-spinner-pos"><div class="goog-te-spinner-animation"><svg xmlns="http://www.w3.org/2000/svg" class="goog-te-spinner" width="96px" height="96px" viewBox="0 0 66 66"><circle class="goog-te-spinner-path" fill="none" stroke-width="6" stroke-linecap="round" cx="33" cy="33" r="30"></circle></svg></div></div></body></html>
