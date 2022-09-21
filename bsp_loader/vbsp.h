@@ -2,9 +2,14 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
+#include <stdbool.h>
+#include <stdlib.h>
 
 typedef struct vec3_s {
-	float x, y, z;
+	union {
+		struct { float v[3]; };
+		struct { float x, y, z; };
+	};
 } vec3_t;
 
 // little-endian "VBSP"   0x50534256
@@ -24,7 +29,7 @@ typedef struct lump_s {
 } lump_t;
 
 // BSP header
-struct dheader_s {
+typedef struct dheader_s {
 	int     ident;                  // BSP file identifier
 	int     version;                // BSP file version
 	lump_t  lumps[HEADER_LUMPS];    // lump directory array
@@ -35,22 +40,22 @@ struct dheader_s {
 #define LVLFLAGS_BAKED_STATIC_PROP_LIGHTING_NONHDR 0x00000001	// was processed by vrad with -staticproplighting, no hdr data
 #define LVLFLAGS_BAKED_STATIC_PROP_LIGHTING_HDR    0x00000002   // was processed by vrad with -staticproplighting, in hdr
 
-struct dflagslump_t {
+typedef struct dflagslump_s {
 	unsigned int m_LevelFlags; //LVLFLAGS_xxx
-};
+} dflagslump_t;
 
-struct lumpfileheader_t {
+typedef struct lumpfileheader_s {
 	int lumpOffset;
 	int lumpID;
 	int lumpVersion;
 	int lumpLength;
 	int mapRevision; // the map's revision (iteration, version) number (added BSPVERSION 6)
-};
+} lumpfileheader_t;
 
-struct dgamelumpheader_t {
+typedef struct dgamelumpheader_s {
 	int lumpCount;
 	// dgamelump_t follow this
-};
+} dgamelumpheader_t;
 
 // This is expected to be a four-CC code ('lump')
 typedef int GameLumpId_t;
@@ -60,44 +65,44 @@ typedef int GameLumpId_t;
 // compression stage ensures a terminal null dictionary entry
 #define GAMELUMPFLAG_COMPRESSED	0x0001
 
-struct dgamelump_t {
+typedef struct dgamelump_s {
 	GameLumpId_t	id;
 	unsigned short	flags;
 	unsigned short	version;
 	int				fileofs;
 	int				filelen;
-};
+} dgamelump_t;
 
-struct dmodel_t {
+typedef struct dmodel_s {
 	vec3_t mins, maxs;
 	vec3_t origin; // for sounds or lights
 	int headnode;
 	int firstface, numfaces;	// submodels just draw faces without walking the bsp tree
-};
+} dmodel_t;
 
-struct dphysmodel_t {
+typedef struct dphysmodel_s {
 	int modelIndex;
 	int dataSize;
 	int keydataSize;
 	int solidCount;
-};
+} dphysmodel_t;
 
 // contains the binary blob for each displacement surface's virtual hull
-struct dphysdisp_t {
+typedef struct dphysdisp_s {
 	unsigned short numDisplacements;
 	//unsigned short dataSize[numDisplacements];
-};
+} dphysdisp_t;
 
-struct dvertex_t {
+typedef struct dvertex_s {
 	vec3_t point;
-};
+} dvertex_t;
 
 // planes (x&~1) and (x&~1)+1 are always opposites
-struct dplane_t {
+typedef struct dplane_s {
 	vec3_t	normal;
 	float	dist;
 	int		type;		// PLANE_X - PLANE_ANYZ ?remove? trivial to regenerate
-};
+} dplane_t;
 
 // --- BSP FLAGS ---
 // contents flags are seperate bits
@@ -251,12 +256,12 @@ typedef struct texinfo_s {
 
 #define TEXTURE_NAME_LENGTH	 128			// changed from 64 BSPVERSION 8
 
-struct dtexdata_t {
+typedef struct dtexdata_s {
 	vec3_t reflectivity;
 	int nameStringTableID; // index into g_StringTable for the texture name
 	int width, height; // source image
 	int view_width, view_height; //
-};
+} dtexdata_t;
 
 //-----------------------------------------------------------------------------
 // Occluders are simply polygons
@@ -289,6 +294,7 @@ struct doccluderpolydata_t {
 	int vertexcount;
 	int planenum;
 };
+#pragma pack()
 
 #define NEIGHBOR_INVALID 0xFFFF
 
@@ -350,6 +356,219 @@ typedef struct disp_tri_s {
 
 #define NUM_DISP_POWER_VERTS(power)	( ((1 << (power)) + 1) * ((1 << (power)) + 1) )
 #define NUM_DISP_POWER_TRIS(power)	( (1 << (power)) * (1 << (power)) * 2 )
+
+// ------------------------------------------------------------------------------------------------ //
+// Displacement neighbor rules
+// ------------------------------------------------------------------------------------------------ //
+//
+// Each displacement is considered to be in its own space:
+//
+//               NEIGHBOREDGE_TOP
+//
+//                   1 --- 2
+//                   |     |
+// NEIGHBOREDGE_LEFT |     | NEIGHBOREDGE_RIGHT
+//                   |     |
+//                   0 --- 3
+//
+//   			NEIGHBOREDGE_BOTTOM
+//
+//
+// Edge edge of a displacement can have up to two neighbors. If it only has one neighbor
+// and the neighbor fills the edge, then SubNeighbor 0 uses CORNER_TO_CORNER (and SubNeighbor 1
+// is undefined).
+//
+// CORNER_TO_MIDPOINT means that it spans [bottom edge,midpoint] or [left edge,midpoint] depending
+// on which edge you're on.
+//
+// MIDPOINT_TO_CORNER means that it spans [midpoint,top edge] or [midpoint,right edge] depending
+// on which edge you're on.
+//
+// Here's an illustration (where C2M=CORNER_TO_MIDPOINT and M2C=MIDPOINT_TO_CORNER
+//
+//
+//				 C2M			  M2C
+//
+//       1 --------------> x --------------> 2
+//
+//       ^                                   ^
+//       |                                   |
+//       |                                   |
+//  M2C  |                                   |	M2C
+//       |                                   |
+//       |                                   |
+//
+//       x                 x                 x 
+//
+//       ^                                   ^
+//       |                                   |
+//       |                                   |
+//  C2M  |                                   |	C2M
+//       |                                   |
+//       |                                   |
+// 
+//       0 --------------> x --------------> 3
+//
+//               C2M			  M2C
+//
+//
+// The CHILDNODE_ defines can be used to refer to a node's child nodes (this is for when you're
+// recursing into the node tree inside a displacement):
+//
+// ---------
+// |   |   |
+// | 1 | 0 |
+// |   |   |
+// |---x---|
+// |   |   |
+// | 2 | 3 |
+// |   |   |
+// ---------
+// 
+// ------------------------------------------------------------------------------------------------ //
+
+// These can be used to index g_ChildNodeIndexMul.
+enum
+{
+	CHILDNODE_UPPER_RIGHT = 0,
+	CHILDNODE_UPPER_LEFT = 1,
+	CHILDNODE_LOWER_LEFT = 2,
+	CHILDNODE_LOWER_RIGHT = 3
+};
+
+
+// Corner indices. Used to index m_CornerNeighbors.
+enum
+{
+	CORNER_LOWER_LEFT = 0,
+	CORNER_UPPER_LEFT = 1,
+	CORNER_UPPER_RIGHT = 2,
+	CORNER_LOWER_RIGHT = 3
+};
+
+
+// These edge indices must match the edge indices of the CCoreDispSurface.
+enum
+{
+	NEIGHBOREDGE_LEFT = 0,
+	NEIGHBOREDGE_TOP = 1,
+	NEIGHBOREDGE_RIGHT = 2,
+	NEIGHBOREDGE_BOTTOM = 3
+};
+
+
+// These denote where one dispinfo fits on another.
+// Note: tables are generated based on these indices so make sure to update
+//       them if these indices are changed.
+typedef enum
+{
+	CORNER_TO_CORNER = 0,
+	CORNER_TO_MIDPOINT = 1,
+	MIDPOINT_TO_CORNER = 2
+} NeighborSpan;
+
+
+// These define relative orientations of displacement neighbors.
+typedef enum
+{
+	ORIENTATION_CCW_0 = 0,
+	ORIENTATION_CCW_90 = 1,
+	ORIENTATION_CCW_180 = 2,
+	ORIENTATION_CCW_270 = 3
+} NeighborOrientation;
+
+
+//=============================================================================
+
+enum
+{
+	LUMP_ENTITIES = 0,	// *
+	LUMP_PLANES = 1,	// *
+	LUMP_TEXDATA = 2,	// *
+	LUMP_VERTEXES = 3,	// *
+	LUMP_VISIBILITY = 4,	// *
+	LUMP_NODES = 5,	// *
+	LUMP_TEXINFO = 6,	// *
+	LUMP_FACES = 7,	// *
+	LUMP_LIGHTING = 8,	// *
+	LUMP_OCCLUSION = 9,
+	LUMP_LEAFS = 10,	// *
+	LUMP_FACEIDS = 11,
+	LUMP_EDGES = 12,	// *
+	LUMP_SURFEDGES = 13,	// *
+	LUMP_MODELS = 14,	// *
+	LUMP_WORLDLIGHTS = 15,	// 
+	LUMP_LEAFFACES = 16,	// *
+	LUMP_LEAFBRUSHES = 17,	// *
+	LUMP_BRUSHES = 18,	// *
+	LUMP_BRUSHSIDES = 19,	// *
+	LUMP_AREAS = 20,	// *
+	LUMP_AREAPORTALS = 21,	// *
+	LUMP_UNUSED0 = 22,
+	LUMP_UNUSED1 = 23,
+	LUMP_UNUSED2 = 24,
+	LUMP_UNUSED3 = 25,
+	LUMP_DISPINFO = 26,
+	LUMP_ORIGINALFACES = 27,
+	LUMP_PHYSDISP = 28,
+	LUMP_PHYSCOLLIDE = 29,
+	LUMP_VERTNORMALS = 30,
+	LUMP_VERTNORMALINDICES = 31,
+	LUMP_DISP_LIGHTMAP_ALPHAS = 32,
+	LUMP_DISP_VERTS = 33,		// CDispVerts
+	LUMP_DISP_LIGHTMAP_SAMPLE_POSITIONS = 34,	// For each displacement
+												//     For each lightmap sample
+												//         byte for index
+												//         if 255, then index = next byte + 255
+												//         3 bytes for barycentric coordinates
+	// The game lump is a method of adding game-specific lumps
+	// FIXME: Eventually, all lumps could use the game lump system
+	LUMP_GAME_LUMP = 35,
+	LUMP_LEAFWATERDATA = 36,
+	LUMP_PRIMITIVES = 37,
+	LUMP_PRIMVERTS = 38,
+	LUMP_PRIMINDICES = 39,
+	// A pak file can be embedded in a .bsp now, and the file system will search the pak
+	//  file first for any referenced names, before deferring to the game directory 
+	//  file system/pak files and finally the base directory file system/pak files.
+	LUMP_PAKFILE = 40,
+	LUMP_CLIPPORTALVERTS = 41,
+	// A map can have a number of cubemap entities in it which cause cubemap renders
+	// to be taken after running vrad.
+	LUMP_CUBEMAPS = 42,
+	LUMP_TEXDATA_STRING_DATA = 43,
+	LUMP_TEXDATA_STRING_TABLE = 44,
+	LUMP_OVERLAYS = 45,
+	LUMP_LEAFMINDISTTOWATER = 46,
+	LUMP_FACE_MACRO_TEXTURE_INFO = 47,
+	LUMP_DISP_TRIS = 48,
+	LUMP_PHYSCOLLIDESURFACE = 49,	// deprecated.  We no longer use win32-specific havok compression on terrain
+	LUMP_WATEROVERLAYS = 50,
+	LUMP_LEAF_AMBIENT_INDEX_HDR = 51,	// index of LUMP_LEAF_AMBIENT_LIGHTING_HDR
+	LUMP_LEAF_AMBIENT_INDEX = 52,	// index of LUMP_LEAF_AMBIENT_LIGHTING
+
+	// optional lumps for HDR
+	LUMP_LIGHTING_HDR = 53,
+	LUMP_WORLDLIGHTS_HDR = 54,
+	LUMP_LEAF_AMBIENT_LIGHTING_HDR = 55,	// NOTE: this data overrides part of the data stored in LUMP_LEAFS.
+	LUMP_LEAF_AMBIENT_LIGHTING = 56,	// NOTE: this data overrides part of the data stored in LUMP_LEAFS.
+
+	LUMP_XZIPPAKFILE = 57,   // deprecated. xbox 1: xzip version of pak file
+	LUMP_FACES_HDR = 58,	// HDR maps may have different face data.
+	LUMP_MAP_FLAGS = 59,   // extended level-wide flags. not present in all levels
+	LUMP_OVERLAY_FADES = 60,	// Fade distances for overlays
+};
+
+
+// Lumps that have versions are listed here
+enum
+{
+	LUMP_LIGHTING_VERSION = 1,
+	LUMP_FACES_VERSION = 1,
+	LUMP_OCCLUSION_VERSION = 2,
+	LUMP_LEAFS_VERSION = 1,
+	LUMP_LEAF_AMBIENT_LIGHTING_VERSION = 1,
+};
 
 // upper design bounds
 #define MIN_MAP_DISP_POWER		2	// Minimum and maximum power a displacement can be.
@@ -427,7 +646,7 @@ typedef struct ddispinfo_s
 	disp_neighbor_t m_EdgeNeighbors[4];		// Indexed by NEIGHBOREDGE_ defines.
 	disp_corner_neighbors_t m_CornerNeighbors[4];	// Indexed by CORNER_ defines.
 
-	enum unnamed { ALLOWEDVERTS_SIZE = PAD_NUMBER(MAX_DISPVERTS, 32) / 32 };
+#define ALLOWEDVERTS_SIZE (PAD_NUMBER(MAX_DISPVERTS, 32) / 32)
 	unsigned long	m_AllowedVerts[ALLOWEDVERTS_SIZE];	// This is built based on the layout and sizes of our neighbors
 														// and tells us which vertices are allowed to be active.
 } ddispinfo_t;
@@ -437,9 +656,9 @@ typedef struct ddispinfo_s
 
 // note that edge 0 is never used, because negative edge nums are used for
 // counterclockwise use of the edge in a face
-struct dedge_t {
+typedef struct dedge_s {
 	unsigned short	v[2];		// vertex numbers
-};
+} dedge_t;
 
 #define	MAXLIGHTMAPS	4
 
@@ -448,19 +667,21 @@ enum dprimitive_type {
 	PRIM_TRISTRIP = 1,
 };
 
-struct dprimitive_t {
+typedef struct dprimitive_s {
 	unsigned char type;
 	unsigned short	firstIndex;
 	unsigned short	indexCount;
 	unsigned short	firstVert;
 	unsigned short	vertCount;
-};
+} dprimitive_t;
 
-struct dprimvert_t {
+typedef struct dprimvert_s {
 	vec3_t pos;
-};
+} dprimvert_t;
 
-struct dface_t
+typedef int CompressedLightCube;
+
+typedef struct dface_s
 {
 	unsigned short	planenum;
 	unsigned char side;	// faces opposite to the node's plane direction
@@ -499,7 +720,7 @@ struct dface_t
 
 	unsigned short	firstPrimID;
 	unsigned int	smoothingGroups;
-};
+} dface_t;
 
 #define dface_get_num_prims(p) ((p)->m_NumPrims & 0x7FFF)
 inline void dface_set_num_prims(dface_t *p_face, unsigned short n_prims)
@@ -539,14 +760,19 @@ struct dfaceid_t {
 		}; \
 	};
 
-struct dleaf_version_0_t {
+typedef struct dleaf_version_0_s {
 	int contents;			// OR of all brushes (not needed?)
 	short cluster;
 
-	BEGIN_BITFIELD(bf);
-	short area : 9;
-	short flags : 7;			// Per leaf flags.
-	END_BITFIELD();
+	//BEGIN_BITFIELD(bf);
+	union {
+		char name;
+		struct {
+			short area : 9;
+			short flags : 7;			// Per leaf flags.
+		};
+	};
+	//END_BITFIELD();
 
 	short mins[3]; // for frustum culling
 	short maxs[3];
@@ -560,18 +786,23 @@ struct dleaf_version_0_t {
 
 	// Precaculated light info for entities.
 	CompressedLightCube m_AmbientLighting;
-};
+} dleaf_version_0_t;
 
 // version 1
-struct dleaf_t {
+typedef struct dleaf_s {
 	int				contents;			// OR of all brushes (not needed?)
 
 	short			cluster;
 
-	BEGIN_BITFIELD(bf);
-	short			area : 9;
-	short			flags : 7;			// Per leaf flags.
-	END_BITFIELD();
+	//BEGIN_BITFIELD(bf);
+	union {
+		char name;
+		struct {
+			short area : 9;
+			short flags : 7;			// Per leaf flags.
+		};
+	};
+	//END_BITFIELD();
 
 	short			mins[3];			// for frustum culling
 	short			maxs[3];
@@ -586,36 +817,36 @@ struct dleaf_t {
 	// NOTE: removed this for version 1 and moved into separate lump "LUMP_LEAF_AMBIENT_LIGHTING" or "LUMP_LEAF_AMBIENT_LIGHTING_HDR"
 	// Precaculated light info for entities.
 //	CompressedLightCube m_AmbientLighting;
-};
+} dleaf_t;
 
 // each leaf contains N samples of the ambient lighting
 // each sample contains a cube of ambient light projected on to each axis
 // and a sampling position encoded as a 0.8 fraction (mins=0,maxs=255) of the leaf's bounding box
-struct dleafambientlighting_t {
+typedef struct dleafambientlighting_s {
 	CompressedLightCube	cube;
 	unsigned char x; // fixed point fraction of leaf bounds
 	unsigned char y; // fixed point fraction of leaf bounds
 	unsigned char z; // fixed point fraction of leaf bounds
 	unsigned char pad; // unused
-};
+} dleafambientlighting_t;
 
-struct dleafambientindex_t {
+typedef struct dleafambientindex_s {
 	unsigned short ambientSampleCount;
 	unsigned short firstAmbientSample;
-};
+} dleafambientindex_t;
 
-struct dbrushside_t {
+typedef struct dbrushside_s {
 	unsigned short planenum;		// facing out of the leaf
 	short texinfo;
 	short dispinfo;		// displacement info (BSPVERSION 7)
 	short bevel;			// is the side a bevel plane? (BSPVERSION 7)
-};
+} dbrushside_t;
 
-struct dbrush_t {
+typedef struct dbrush_s {
 	int firstside;
 	int numsides;
 	int contents;
-};
+} dbrush_t;
 
 #define	ANGLE_UP	-1
 #define	ANGLE_DOWN	-2
@@ -661,7 +892,7 @@ struct dleafwaterdata_t {
 //TODO: CFaceMacroTextureInfo
 
 // lights that were used to illuminate the world
-enum emittype_t
+typedef enum emittype_s
 {
 	emit_surface,		// 90 degree spotlight
 	emit_point,			// simple point light source
@@ -669,7 +900,7 @@ enum emittype_t
 	emit_skylight,		// directional light with no falloff (surface must trace to SKY texture)
 	emit_quakelight,	// linear falloff, non-lambertian
 	emit_skyambient,	// spherical light source with no falloff (surface must trace to SKY texture)
-};
+} emittype_t;
 
 // Flags for dworldlight_t::flags
 #define DWL_FLAGS_INAMBIENTCUBE		0x0001	// This says that the light was put into the per-leaf ambient cubes.
@@ -696,7 +927,7 @@ struct dworldlight_t {
 };
 
 struct dcubemapsample_t {
-	int			origin[3];			// position of light snapped to the nearest integer
+	int origin[3];			// position of light snapped to the nearest integer
 									// the filename for the vtf file is derived from the position
 	unsigned char size;				// 0 - default
 									// otherwise, 1<<(size-1)
@@ -858,4 +1089,53 @@ struct doverlay_t
 //	// extra field (variable size) 
 //	// file data (variable size) 
 //};
-#pragma pack()
+
+
+// --- MATHLIB DEFS ---
+typedef struct cplane_s {
+	vec3_t	normal;
+	float	dist;
+	unsigned char type;			// for fast side tests
+	unsigned char signbits;		// signx + (signy<<1) + (signz<<1)
+	unsigned char pad[2];
+} cplane_t;
+
+// --- END MATHLIB DEFS ---
+
+// --- CMODEL DEFS ---
+typedef struct csurface_s {
+	const char	*name;
+	short		surfaceProps;
+	unsigned short	flags;		// BUGBUG: These are declared per surface, not per material, but this database is per-material now
+} csurface_t;
+// --- END CMODEL DEFS ---
+
+typedef enum bsp_type {
+	BSP_HALF_LIFE_1 = 0,
+	BSP_HALF_LIFE_2
+} bsp_type_t;
+
+typedef struct bsp_s {
+	bsp_type_t type;
+	size_t data_size;
+	unsigned char *p_data;
+	dheader_t *p_header;
+} bsp_t;
+
+#define bsp_lump(pbsp, lumpidx) (&pbsp->p_header->lumps[lumpidx])
+#define bsp_lump_valid(plump) (plump->filelen)
+#define bsp_lump_data(pbsp, plump) (char *)(pbsp->p_data + plump->fileofs)
+
+// --------------------------- 
+// bsp_load
+// 
+// load bsp file to memory
+// --------------------------- 
+bool bsp_load(bsp_t *p_bsp, const char *p_filename);
+
+// --------------------------- 
+// bsp_free
+// 
+// unload bsp from memory
+// --------------------------- 
+void bsp_free(bsp_t *p_bsp);
