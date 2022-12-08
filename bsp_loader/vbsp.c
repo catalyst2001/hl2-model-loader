@@ -41,6 +41,21 @@ bool bsp_load(bsp_t *p_bsp, const char *p_filename)
 	return true;
 }
 
+bool bsp_load_lump_data(void *p_dst, size_t offset, size_t count, const bsp_t *p_bsp, const lump_t *p_lump)
+{
+	char *p_dstptr;
+	char *p_srcptr;
+	if (offset >= p_lump->filelen || (offset + count) >= p_lump->filelen)
+		return false; // prevent out of bounds reading
+
+	p_dstptr = (char *)p_dst;
+	p_srcptr = (char *)bsp_lump_data(p_bsp, p_lump) + offset;
+	for (size_t i = 0; i < count; i++)
+		p_dstptr[i] = p_srcptr[i];
+
+	return true;
+}
+
 //TODO: https://github.com/VSES/SourceEngine2007/blob/43a5c90a5ada1e69ca044595383be67f40b33c61/se2007/engine/cmodel_bsp.cpp
 //void CollisionBSPData_LoadTextures(CCollisionBSPData *pBSPData);
 //void CollisionBSPData_LoadTexinfo(CCollisionBSPData *pBSPData, CUtlVector<unsigned short> &map_texinfo);

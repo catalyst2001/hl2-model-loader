@@ -1,3 +1,8 @@
 ﻿  main.c
+d:\github\hl2-model-loader\bsp_loader\main.c(13): warning C4047: инициализация: "char *" отличается по уровням косвенного обращения от "size_t"
 d:\github\hl2-model-loader\bsp_loader\main.c(32): warning C4101: j: неиспользованная локальная переменная
+d:\github\hl2-model-loader\bsp_loader\main.c(206): warning C4018: >=: несоответствие типов со знаком и без знака
+  vbsp.c
+d:\github\hl2-model-loader\bsp_loader\vbsp.c(48): warning C4018: >=: несоответствие типов со знаком и без знака
+  Создание кода...
   bsp_loader.vcxproj -> D:\GITHUB\hl2-model-loader\Debug\bsp_loader.exe

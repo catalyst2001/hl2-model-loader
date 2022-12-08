@@ -960,6 +960,17 @@ struct doverlay_t
 	vec3_t vecBasisNormal;
 };
 
+typedef struct cdisp_vert_s {
+	vec3_t m_vVector; // Vector field defining displacement volume.
+	float m_flDist; // Displacement distances.
+	float m_flAlpha; // "per vertex" alpha values.
+} cdisp_vert_t;
+
+typedef struct cdisp_tri_s {
+	unsigned short m_uiTags; // Displacement triangle tags.
+} cdisp_tri_t;
+
+
 //TODO: --- CONTINUE THIS! ---
 //inline void dwateroverlay_t::SetFaceCount(unsigned short count)
 //{
@@ -1124,7 +1135,10 @@ typedef struct bsp_s {
 
 #define bsp_lump(pbsp, lumpidx) (&pbsp->p_header->lumps[lumpidx])
 #define bsp_lump_valid(plump) (plump->filelen)
-#define bsp_lump_data(pbsp, plump) (char *)(pbsp->p_data + plump->fileofs)
+#define bsp_lump_data(pbsp, plump) ((size_t)((char *)pbsp->p_data + plump->fileofs))
+#define bsp_lump_data_element(pbsp, plump, elemsize, idx) ((size_t)(bsp_lump_data(pbsp, plump) + (idx * elemsize)))
+
+bool bsp_load_lump_data(void *p_dst, size_t offset, size_t count, const bsp_t *p_bsp, const lump_t *p_lump);
 
 // --------------------------- 
 // bsp_load
