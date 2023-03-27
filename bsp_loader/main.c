@@ -272,14 +272,138 @@ bool bsp_dump_disp_info(const bsp_t *p_bsp, bool b_hdr)
 	return true;
 }
 
+void bsp_dump_edges(const bsp_t *p_bsp)
+{
+	lump_t *p_edges_lmp = bsp_lump(p_bsp, LUMP_EDGES);
+	dedge_t *p_edges = bsp_lump_data(p_bsp, p_edges_lmp);
+	size_t num_of_edges = p_edges_lmp->filelen / sizeof(dedge_t);
+	for (size_t i = 0; i < num_of_edges; i++) {
+		printf("%d ( %d %d )\n", i, p_edges[i].v[0], p_edges[i].v[1]);
+	}
+
+
+}
+
 void bsp_dump_info(const bsp_t *p_bsp)
 {
 	bsp_dump_entities(p_bsp); // dump entities key-values string
 	bsp_dump_planes(p_bsp); // dump planes
 	bsp_dump_textures(p_bsp); // dump textures
+	bsp_dump_edges(p_bsp); // dump edges
 
 	
 
+}
+
+#include "glwnd.h"
+
+INT Width, Height;
+
+void fn_window_resize(HWND hWnd, int width, int height)
+{
+	if (!height)
+		height = 1;
+
+	Width = width;
+	Height = height;
+	glViewport(0, 0, (GLsizei)width, (GLsizei)height);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	gluPerspective(45.0, width / (double)height, 0.1, 1000.0);
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+}
+
+void fn_mousemove(HWND hWnd, int x, int y)
+{
+}
+
+void fn_mouseclick(HWND hWnd, int x, int y, int button, int state)
+{
+}
+
+void fn_charinput(HWND hWnd, char symbol)
+{
+}
+
+int num_of_edges;
+dedge_t *p_edges;
+int num_of_vertices;
+vec3_t *p_verts;
+
+float anglex = 0.f;
+float angley = 0.f;
+
+//https://docs.microsoft.com/ru-ru/windows/win32/inputdev/wm-keydown
+void fn_keydown(HWND hWnd, INT state, WPARAM wparam, LPARAM lparam)
+{
+	INT key = (INT)wparam;
+	if (state == KEY_DOWN) {
+		switch (key) {
+		case 27:
+			exit(0); //close program
+			break;
+
+		case VK_LEFT:
+			anglex += 0.1;
+			break;
+
+		case VK_RIGHT:
+			anglex -= 0.1;
+			break;
+
+		case VK_UP:
+			angley -= 0.1;
+			break;
+
+		case VK_DOWN:
+			angley += 0.1;
+			break;
+
+		}
+	}
+}
+
+//Add this GL functions
+void fn_windowcreate(HWND hWnd)
+{
+	RECT rct;
+	GetClientRect(hWnd, &rct);
+	glViewport(0, 0, (GLsizei)rct.right, (GLsizei)rct.bottom);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	gluPerspective(45.0, rct.right / (double)rct.bottom, 0.1, 1000.0);
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+
+	glEnable(GL_DEPTH_TEST);
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+}
+
+void fn_windowclose(HWND hWnd)
+{
+	exit(0);
+}
+
+void fn_draw()
+{
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glLoadIdentity();
+
+	//glVertexPointer(3, GL_FLOAT, 0, p_verts);
+	//glDrawElements(GL_LINES, num_of_edges, GL_UNSIGNED_INT, p_edges);
+
+	glTranslatef(0.f, 0.f, 0.f);
+	glRotatef(anglex, 1.f, 0.f, 0.f);
+	glRotatef(angley, 0.f, 1.f, 0.f);
+
+	glBegin(GL_LINES);
+	for (int i = 0; i < num_of_edges; i++) {
+		glVertex3fv((float *)&p_verts[p_edges[i].v[0]]);
+		glVertex3fv((float *)&p_verts[p_edges[i].v[1]]);
+	}
+	glEnd();
 }
 
 int main()
@@ -291,7 +415,35 @@ int main()
 		return 1;
 	}
 
-	bsp_dump_info(&bsp);
+	bsp_t *p_bsp = &bsp;
+
+	/* edges */
+	lump_t *p_edges_lmp = bsp_lump(p_bsp, LUMP_EDGES);
+	p_edges = bsp_lump_data(p_bsp, p_edges_lmp);
+	num_of_edges = p_edges_lmp->filelen / sizeof(dedge_t);
+
+	lump_t *p_vertexes_lmp = bsp_lump(p_bsp, LUMP_VERTEXES);
+	p_verts = bsp_lump_data(p_bsp, p_vertexes_lmp);
+	num_of_vertices = p_vertexes_lmp->filelen / sizeof(vec3_t);
+
+	//bsp_dump_info(&bsp);
+
+
+	create_window("Half-Life 2  BSP loading test", __FILE__ __TIME__,
+		24,					  //Colors bits
+		32,					  //Depth bits
+		fn_draw,			  //Draw function
+		fn_window_resize,	  //Window resize function
+		fn_mousemove,		  //Mouse move function
+		fn_mouseclick,		  //Mouse click function
+		fn_charinput,		  //Char input function
+		fn_keydown,			  //Keydown function
+		fn_windowcreate,	  //Window create function
+		fn_windowclose,		  //Window close function
+		0, 0,
+		800,				  //Window width
+		600);				  //Window height
+
 
 
 	bsp_free(&bsp);
