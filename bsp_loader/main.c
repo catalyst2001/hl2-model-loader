@@ -326,11 +326,6 @@ void fn_charinput(HWND hWnd, char symbol)
 {
 }
 
-int num_of_edges;
-dedge_t *p_edges;
-int num_of_vertices;
-vec3_t *p_verts;
-
 float anglex = 0.f;
 float angley = 0.f;
 
@@ -406,6 +401,51 @@ void fn_draw()
 	glEnd();
 }
 
+bool bsp_generate_triangle_mesh(vec3_t **p_vertex_buffer, unsigned int *p_indices_buffer, size_t *p_dst_indices_buf_size, const bsp_t *p_bsp)
+{
+	lump_t *p_leafs_lump = (lump_t *)bsp_lump(p_bsp, LUMP_LEAFS);
+	size_t num_leafs = p_leafs_lump->filelen / sizeof(dleaf_t);
+	dleaf_t *p_leafs = (dleaf_t *)bsp_lump_data(p_bsp, p_leafs_lump);
+
+	lump_t *p_faces_lump = bsp_lump(p_bsp, LUMP_FACES);
+	dface_t *p_faces = bsp_lump_data(p_bsp, p_faces_lump);
+	size_t num_faces = p_faces_lump->filelen / sizeof(dface_t);
+
+	lump_t *p_edges_lump = bsp_lump(p_bsp, LUMP_EDGES);
+	dedge_t *p_edges = bsp_lump_data(p_bsp, p_edges_lump);
+	size_t num_edges = p_edges_lump->filelen / sizeof(dedge_t);
+
+	lump_t *p_vertices_lump = bsp_lump(p_bsp, LUMP_VERTEXES);
+	vec3_t *p_verts = bsp_lump_data(p_bsp, p_vertices_lump);
+	size_t num_vertices = p_vertices_lump->filelen / sizeof(vec3_t);
+
+	/* iterate in all BSP leafs */
+	for (size_t i = 0; i < num_leafs; i++) {
+		int face_index = p_faces[p_leafs[i].firstleafface + i].origFace;
+		dface_t *p_face = &p_faces[face_index];
+
+		/* write indices */
+		*p_dst_indices_buf_size = p_face->numedges;
+		unsigned int *p_idx_buffer = (unsigned int *)malloc(p_face->numedges * sizeof(unsigned int));
+		if (!(*p_idx_buffer)) {
+			printf("indices buffer allocation failed\n");
+			return false;
+		}
+
+		*p_indices_buffer = p_idx_buffer;
+		for (size_t j = 0; j < p_face->numedges - 2; j++) {
+			p_idx_buffer[j] = j;
+			p_idx_buffer[j + 1] = j + 1;
+			p_idx_buffer[j + 2] = j + 2;
+		}
+
+		/* write vertices */
+		for (size_t j = 0; j < p_face->numedges; j++) {
+			unsigned int vertex_idx = p_face->dispinfo;
+		}
+	}
+}
+
 int main()
 {
 	bsp_t bsp;
@@ -418,13 +458,13 @@ int main()
 	bsp_t *p_bsp = &bsp;
 
 	/* edges */
-	lump_t *p_edges_lmp = bsp_lump(p_bsp, LUMP_EDGES);
-	p_edges = bsp_lump_data(p_bsp, p_edges_lmp);
-	num_of_edges = p_edges_lmp->filelen / sizeof(dedge_t);
+	//lump_t *p_edges_lmp = bsp_lump(p_bsp, LUMP_EDGES);
+	//p_edges = bsp_lump_data(p_bsp, p_edges_lmp);
+	//num_of_edges = p_edges_lmp->filelen / sizeof(dedge_t);
 
-	lump_t *p_vertexes_lmp = bsp_lump(p_bsp, LUMP_VERTEXES);
-	p_verts = bsp_lump_data(p_bsp, p_vertexes_lmp);
-	num_of_vertices = p_vertexes_lmp->filelen / sizeof(vec3_t);
+	//lump_t *p_vertexes_lmp = bsp_lump(p_bsp, LUMP_VERTEXES);
+	//p_verts = bsp_lump_data(p_bsp, p_vertexes_lmp);
+	//num_of_vertices = p_vertexes_lmp->filelen / sizeof(vec3_t);
 
 	//bsp_dump_info(&bsp);
 
