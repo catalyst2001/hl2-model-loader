@@ -1,6 +1,8 @@
 #pragma once
 #include <vector>
 
+#define MAX_WEIGHTS 4
+
 struct smd_vec3 {
 	float x, y, z;
 };
@@ -39,10 +41,18 @@ struct smd_triangle {
 	};
 };
 
+struct smd_weight {
+	int boneid;
+	float weight;
+};
+
 struct smd_vertex {
 	smd_vec3 vertex;
 	smd_vec3 normal;
-	float weights[4];
+	smd_vec2 uv;
+
+	int num_weights;
+	smd_weight weights[MAX_WEIGHTS];
 };
 
 struct smd_mesh {
@@ -73,6 +83,7 @@ enum SMD_LOADER_STATUS {
 	SMDLDR_STATUS_INCORRECT_KEYFRAME_INDEX,
 	SMDLDR_STATUS_INCORRECT_KEYFRAME_BONE_DATA,
 	SMDLDR_STATUS_UNEXPECTED_END_OF_FILE,
+	SMDLDR_STATUS_WEIGHTS_LIMIT_EXCEEDED
 };
 
 int smd_load_model(smd_model *p_dst_smdmodel, const char *p_smdpath);

@@ -15,6 +15,37 @@
 
 #define cstrcmp(str, cstr) (strncmp(str, cstr, sizeof(cstr) - 1))
 
+bool smd_next_token(char **p_token, int token)
+{
+	(*p_token) = strchr(*p_token, token);
+	return (*p_token);
+}
+
+bool smd_next_token_int(int *p_dst_int, char **p_token, int delim)
+{
+	if (!smd_next_token(p_token, delim))
+		return false;
+
+	*p_dst_int = atoi(*p_token);
+	return true;
+}
+
+bool smd_next_token_float(float *p_dst_float, char **p_token, int delim)
+{
+	if (!smd_next_token(p_token, delim))
+		return false;
+
+	*p_dst_float = atof(*p_token);
+	return true;
+}
+
+bool smd_next_token_vector(smd_vec3 *p_dst_vector, char **p_token, int delim)
+{
+	return smd_next_token_float(&p_dst_vector->x, p_token, delim) &&
+		smd_next_token_float(&p_dst_vector->y, p_token, delim) &&
+		smd_next_token_float(&p_dst_vector->z, p_token, delim);
+}
+
 /*
  count frames in smd
 
@@ -160,38 +191,94 @@ int smd_load_model(smd_model *p_dst_smdmodel, const char *p_smdpath)
 
 				/* load triangles */
 				if (!cstrcmp(line, "triangles")) {
-					char previous_material[256];
+					char *p_tokptr;
+					char previous_material[1024];
 					previous_material[0] = 0;
+					smd_mesh *p_current_mesh;
 					SMD_DBG("Loader: Enter 'triangles' section");
+					line[0] = '\0';
 					while (!feof(fp) && !ferror(fp) && cstrcmp(line, "end") != 0) {
-						fgets(line, sizeof(line), fp);
-						if (IS_EMPTY_LINE(line))
-							continue;
-
+						/* read material */
 						// <string|material>
 						if (fgets(line, sizeof(line), fp) == NULL) {
 							fclose(fp);
 							return SMDLDR_STATUS_UNEXPECTED_END_OF_FILE;
 						}
 
+						if (IS_EMPTY_LINE(line))
+							continue;
 
+						/* check beginning new mesh group */
+						if (strcmp(previous_material, line) != 0) {
+							SMD_DBG("Loader: new group: %s", line);
+							p_dst_smdmodel->meshes.reserve(p_dst_smdmodel->meshes.size() + 1);
+							p_current_mesh = &p_dst_smdmodel->meshes[p_dst_smdmodel->meshes.size() - 1];
+							strcpy_s(p_current_mesh->name, line);
+						}
 
+						//TODO: 
+						// короче идея состоит в том, чтобы добавить цикл чтения строк продолжающийся до тех пор, пока текущий материал будет отличаться от материала на считанной строке
+						// как дочитали, ниже цикла который идет до end, добавляем этот меш
+						// 
+
+						/* copy current material */
+						strcpy_s(previous_material, sizeof(previous_material), line);
+
+						/* read vertex data */
 						// <int|Parent bone> <float|PosX PosY PosZ> <normal|NormX NormY NormZ> <float|U V> <int|links> <int|Bone ID> <float|Weight> [...]
+						if (fgets(line, sizeof(line), fp) == NULL) {
+							fclose(fp);
+							return SMDLDR_STATUS_UNEXPECTED_END_OF_FILE;
+						}
+
+						if (IS_EMPTY_LINE(line))
+							continue;
+
+						/* check "end" tag */
+						if (!cstrcmp(line, "end"))
+							goto __leave_triangles;
+
+						p_tokptr = (char *)line;
+
 						int parent;
-						smd_vec3 vertex;
-						smd_vec3 normal;
-						smd_vec2 uv;
-						int links;
-						int args_read = sscanf_s(line, "%d %f %f %f %f %f %f %f %f %d", &parent, 
-							&vertex.x, &vertex.y, &vertex.z, &normal.x, &normal.y, &normal.z, &uv.u, &uv.v, &links);
-						if (args_read < 10) {
+						smd_vertex vert;
+						if (!(smd_next_token_int(&parent, &p_tokptr, ' ') &&
+							smd_next_token_vector(&vert.vertex, &p_tokptr, ' ') &&
+							smd_next_token_vector(&vert.normal, &p_tokptr, ' ') &&
+							smd_next_token_float(&vert.uv.u, &p_tokptr, ' ') &&
+							smd_next_token_float(&vert.uv.v, &p_tokptr, ' '))) {
+
 							fclose(fp);
 							return SMDLDR_STATUS_INVALID_LINE;
 						}
 
-						//TODO: PROCESS LINKS!
+						/* if weights exists */
+						if (smd_next_token_int(&vert.num_weights, &p_tokptr, ' ')) {
+
+							/* check weights count */
+							if (vert.num_weights > MAX_WEIGHTS) {
+								fclose(fp);
+								return SMDLDR_STATUS_WEIGHTS_LIMIT_EXCEEDED;
+							}
+
+							/* read weights info from line tokens */
+							for (int i = 0; i < vert.num_weights; i++) {
+								if (!(smd_next_token_int(&vert.weights[i].boneid, &p_tokptr, ' ') &&
+									smd_next_token_float(&vert.weights[i].weight, &p_tokptr, ' '))) {
+									return SMDLDR_STATUS_INVALID_LINE;
+								}
+							}
+						}
 					}
-					SMD_DBG("Loader: Leave 'skeleton' section. Loaded %d keyframes", p_dst_smdmodel->keyframes.size());
+
+#ifdef _DEBUG
+					SMD_DBG("Loader: Leave 'triangles' section. Loaded %d meshes", p_dst_smdmodel->meshes.size());
+					for (int j = 0; j < p_dst_smdmodel->meshes.size(); j++) {
+						smd_mesh *p_currmesh = &p_dst_smdmodel->meshes[j];
+						SMD_DBG("Mesh material: %s  (Verts: %d)", p_currmesh->name, p_currmesh->vertices.size());
+					}
+#endif
+				__leave_triangles:
 					continue; // continue main loop
 				}
 			}
