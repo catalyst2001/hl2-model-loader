@@ -6,5 +6,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="smd_loader.h" />
+    <ClInclude Include="glwnd.h" />
   </ItemGroup>
 </Project>

@@ -155,6 +155,7 @@
     <ClCompile Include="smd_loader.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="glwnd.h" />
     <ClInclude Include="smd_loader.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
