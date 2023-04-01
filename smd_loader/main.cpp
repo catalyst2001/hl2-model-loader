@@ -15,10 +15,16 @@ void fn_draw()
 	glTranslatef(0.0f, -35.0f, -150.0f);
 	glRotatef(-90.0f, 1.0, 0.0, 0.0);
 
+	//for (int i = 0; i < model.meshes.size(); i++) {
+	//	glVertexPointer(3, GL_FLOAT, sizeof(smd_vertex), ((const char *)model.meshes[i].vertices.data() + offsetof(smd_vertex, vertex)));
+	//	glNormalPointer(GL_FLOAT, sizeof(smd_vertex), ((const char *)model.meshes[i].vertices.data() + offsetof(smd_vertex, normal)));
+	//	glDrawArrays(GL_TRIANGLES, 0, model.meshes[i].vertices.size());
+	//}
+
 	for (int i = 0; i < model.meshes.size(); i++) {
 		glVertexPointer(3, GL_FLOAT, sizeof(smd_vertex), ((const char *)model.meshes[i].vertices.data() + offsetof(smd_vertex, vertex)));
 		glNormalPointer(GL_FLOAT, sizeof(smd_vertex), ((const char *)model.meshes[i].vertices.data() + offsetof(smd_vertex, normal)));
-		glDrawArrays(GL_TRIANGLES, 0, model.meshes[i].vertices.size());
+		glDrawElements(GL_TRIANGLES, model.meshes[i].triangles.size(), GL_UNSIGNED_INT, model.meshes[i].triangles.data());
 	}
 }
 
@@ -98,6 +104,9 @@ int main()
 		printf("Loading SMD model failed. Error: %d\n", status);
 		return 1;
 	}
+
+	//for (size_t i = 0; i < model.meshes.size(); i++)
+	//	smd_model_optimize_mesh(&model.meshes[i]);
 
 	printf("\n\n\n\n" "Initializing OpenGL renderer...\n");
 

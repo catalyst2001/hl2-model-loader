@@ -91,6 +91,17 @@ int smd_frames_count(FILE *fp)
 	return num_kframes;
 }
 
+bool smd_vertex_exists(smd_mesh *p_mesh, int *p_dst_idx, smd_vertex &_vtx_ref)
+{
+	for (size_t i = 0; i < p_mesh->vertices.size(); i++) {
+		if (p_mesh->vertices[i] == _vtx_ref) {
+			*p_dst_idx = i;
+			return true;
+		}
+	}
+	return false;
+}
+
 int smd_load_model(smd_model *p_dst_smdmodel, const char *p_smdpath)
 {
 	int num_frames;
@@ -292,7 +303,16 @@ int smd_load_model(smd_model *p_dst_smdmodel, const char *p_smdpath)
 									}
 								}
 							}
-							p_current_mesh->vertices.push_back(vert);
+
+							/* OPTIMIZING VERTICES DUPLICATION */
+							int exists_vertex_idx;
+							if (smd_vertex_exists(p_current_mesh, &exists_vertex_idx, vert)) {
+								p_current_mesh->triangles.push_back(exists_vertex_idx);
+							}
+							else {
+								p_current_mesh->triangles.push_back(p_current_mesh->vertices.size());
+								p_current_mesh->vertices.push_back(vert);
+							}
 						}
 					}
 
@@ -307,11 +327,17 @@ int smd_load_model(smd_model *p_dst_smdmodel, const char *p_smdpath)
 					continue; // continue main loop
 				}
 			}
+			SMD_DBG("SMD Loaded sucessfully! Meshes: %d", p_dst_smdmodel->meshes.size());
 			return SMDLDR_STATUS_OK;
 		}
 		return SMDLDR_STATUS_VERSION_NOT_FOUND; // version is not found in start of file
 	}
 	return SMDLDR_STATUS_FILE_ERROR;
+}
+
+bool smd_model_is_animation(smd_model *p_src_smdmodel)
+{
+	return p_src_smdmodel->keyframes.size() > 1;
 }
 
 void smd_clear_model(smd_model *p_src_model)

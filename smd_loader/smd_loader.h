@@ -6,10 +6,14 @@
 
 struct smd_vec3 {
 	float x, y, z;
+
+	bool operator==(smd_vec3 &_cmp_vec_ref) { return x == _cmp_vec_ref.x && y == _cmp_vec_ref.y && z == _cmp_vec_ref.z; }
 };
 
 struct smd_vec2 {
 	float u, v;
+
+	bool operator==(smd_vec2 &_cmp_vec_ref) { return u == _cmp_vec_ref.u && v == _cmp_vec_ref.v; }
 };
 
 /* keyframe bone */
@@ -54,13 +58,17 @@ struct smd_vertex {
 
 	int num_weights;
 	smd_weight weights[MAX_WEIGHTS];
+
+	bool operator==(smd_vertex &_cmp_vert_ref) {
+		return _cmp_vert_ref.vertex == vertex && _cmp_vert_ref.normal == normal && _cmp_vert_ref.uv == uv;
+	}
 };
 
 struct smd_mesh {
 	char name[64];
 	char texture[64];
 	std::vector<smd_vertex> vertices;
-	std::vector<smd_triangle> triangles;
+	std::vector<unsigned int> triangles;
 };
 
 struct smd_anim_keyframe {
@@ -87,6 +95,12 @@ enum SMD_LOADER_STATUS {
 	SMDLDR_STATUS_WEIGHTS_LIMIT_EXCEEDED
 };
 
+/* LOAD MODEL FROM FILE */
 int smd_load_model(smd_model *p_dst_smdmodel, const char *p_smdpath);
+
+/* CURRENT OPENED SMD IS ANIM FILE? */
+bool smd_model_is_animation(smd_model *p_src_smdmodel);
+
+/* REMOVE ALL DATA FROM MODEL */
 void smd_clear_model(smd_model *p_src_model);
 
