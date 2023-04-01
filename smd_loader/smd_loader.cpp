@@ -207,7 +207,7 @@ int smd_load_model(smd_model *p_dst_smdmodel, const char *p_smdpath)
 										fclose(fp);
 										return SMDLDR_STATUS_INCORRECT_KEYFRAME_BONE_DATA;
 									}
-									keyframe.frames.push_back(bone); // add bone to keyframe
+									keyframe.positions.push_back(bone); // add bone to keyframe
 									bone_idx++;
 								}
 								p_dst_smdmodel->keyframes.push_back(keyframe); // add keyframe

@@ -21,11 +21,42 @@ void fn_draw()
 	//	glDrawArrays(GL_TRIANGLES, 0, model.meshes[i].vertices.size());
 	//}
 
+	glPushAttrib(GL_CURRENT_BIT);
+	//glColor3f(0.0f, 1.0f, 0.0f);
+	//glLineWidth(3);
+	//glBegin(GL_LINES);
+	std::vector<smd_kfbone> &p_kf = model.keyframes[0].positions;
+	//for (int i = 0; i < model.hierarchy.size(); i++) {
+	//	if (p_kf[i].parent_id != -1) {
+	//		glVertex3fv((float *)&p_kf[i].position);
+	//		glVertex3fv((float *)&p_kf[p_kf[i].parent_id].position);
+	//	}
+	//}
+	//glEnd();
+	//glLineWidth(1);
+
+	glPointSize(5.0f);
+	glColor3f(1.0f, 0.0f, 0.0f);
+	glBegin(GL_POINTS);
+	smd_vec3 parent_pos;
+	for (int i = 0; i < model.hierarchy.size(); i++) {
+		glVertex3fv((float *)&model.keyframes[0].positions[i].position);
+	}
+
+	glEnd();
+	glPointSize(1.0f);
+
+	glPopAttrib();
+
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glEnableClientState(GL_NORMAL_ARRAY);
 	for (int i = 0; i < model.meshes.size(); i++) {
 		glVertexPointer(3, GL_FLOAT, sizeof(smd_vertex), ((const char *)model.meshes[i].vertices.data() + offsetof(smd_vertex, vertex)));
 		glNormalPointer(GL_FLOAT, sizeof(smd_vertex), ((const char *)model.meshes[i].vertices.data() + offsetof(smd_vertex, normal)));
 		glDrawElements(GL_TRIANGLES, model.meshes[i].triangles.size(), GL_UNSIGNED_INT, model.meshes[i].triangles.data());
 	}
+	glDisableClientState(GL_VERTEX_ARRAY);
+	glDisableClientState(GL_NORMAL_ARRAY);
 }
 
 void fn_window_resize(HWND hWnd, int width, int height)
@@ -88,8 +119,6 @@ void fn_windowcreate(HWND hWnd)
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	glEnable(GL_DEPTH_TEST);
 	glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glEnableClientState(GL_NORMAL_ARRAY);
 }
 
 void fn_windowclose(HWND hWnd)
@@ -99,15 +128,25 @@ void fn_windowclose(HWND hWnd)
 
 int main()
 {
-	int status = smd_load_model(&model, "model/ct_gign_reference.smd");
+	int status = smd_load_model(&model, "model/Jump.smd");
 	if (status != SMDLDR_STATUS_OK) {
 		printf("Loading SMD model failed. Error: %d\n", status);
 		return 1;
 	}
 
-	//for (size_t i = 0; i < model.meshes.size(); i++)
-	//	smd_model_optimize_mesh(&model.meshes[i]);
+	if (model.keyframes[0].positions.size() != model.hierarchy.size()) {
+		MessageBoxA(0, 0, 0, 0);
+	}
 
+	for (size_t i = 0; i < model.keyframes[0].positions.size(); i++) {
+		smd_kfbone *p_bone = &model.keyframes[0].positions[i];
+		printf("%d (%f %f %f) (%f %f %f)\n", model.hierarchy[i].parent_id,
+			p_bone->position.x, p_bone->position.y, p_bone->position.z, 
+			p_bone->rotation.x, p_bone->rotation.y, p_bone->rotation.z
+		);
+	}
+
+	//return 0;
 	printf("\n\n\n\n" "Initializing OpenGL renderer...\n");
 
 	create_window("Test Valve SMD model view before anim", "TestSmdViewer",

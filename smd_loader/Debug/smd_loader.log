@@ -1,8 +1,5 @@
-﻿  main.cpp
-e:\github\hl2-model-loader\smd_loader\main.cpp(24): warning C4018: <: несоответствие типов со знаком и без знака
-  smd_loader.cpp
+﻿  smd_loader.cpp
 e:\github\hl2-model-loader\smd_loader\smd_loader.cpp(50): warning C4244: =: преобразование "double" в "float", возможна потеря данных
 e:\github\hl2-model-loader\smd_loader\smd_loader.cpp(196): warning C4018: <: несоответствие типов со знаком и без знака
-e:\github\hl2-model-loader\smd_loader\smd_loader.cpp(322): warning C4018: <: несоответствие типов со знаком и без знака
-  Создание кода...
+e:\github\hl2-model-loader\smd_loader\smd_loader.cpp(323): warning C4018: <: несоответствие типов со знаком и без знака
   smd_loader.vcxproj -> E:\GITHUB\hl2-model-loader\Debug\smd_loader.exe

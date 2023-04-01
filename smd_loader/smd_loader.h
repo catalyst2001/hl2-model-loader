@@ -7,6 +7,12 @@
 struct smd_vec3 {
 	float x, y, z;
 
+	void flip_zy() {
+		float temp = z;
+		z = y;
+		y = temp;
+	}
+
 	bool operator==(smd_vec3 &_cmp_vec_ref) { return x == _cmp_vec_ref.x && y == _cmp_vec_ref.y && z == _cmp_vec_ref.z; }
 };
 
@@ -72,7 +78,7 @@ struct smd_mesh {
 };
 
 struct smd_anim_keyframe {
-	std::vector<smd_kfbone> frames;
+	std::vector<smd_kfbone> positions;
 };
 
 struct smd_model {
