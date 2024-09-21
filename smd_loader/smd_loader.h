@@ -1,11 +1,17 @@
 #pragma once
 #define _CRT_SECURE_NO_WARNINGS
 #include <vector>
+#include "../glm/glm.hpp"
+#include "../glm/gtc/matrix_transform.hpp"
+#include "../glm/gtc/type_ptr.hpp"
 
 #define MAX_WEIGHTS 4
 
 struct smd_vec3 {
 	float x, y, z;
+
+	smd_vec3() {}
+	smd_vec3(float _x, float _y, float _z) : x(_x), y(_y), z(_z) {}
 
 	void flip_zy() {
 		float temp = z;
@@ -14,6 +20,15 @@ struct smd_vec3 {
 	}
 
 	bool operator==(smd_vec3 &_cmp_vec_ref) { return x == _cmp_vec_ref.x && y == _cmp_vec_ref.y && z == _cmp_vec_ref.z; }
+	smd_vec3 operator+(smd_vec3 &vec) { return smd_vec3(x + vec.x, y + vec.y, z + vec.z); }
+	smd_vec3 &operator+=(smd_vec3 &vec) {
+		x += vec.x; y += vec.y; z += vec.z;
+		return *this;
+	}
+	smd_vec3 &operator-=(smd_vec3 &vec) {
+		x -= vec.x; y -= vec.y; z -= vec.z;
+		return *this;
+	}
 };
 
 struct smd_vec2 {
@@ -32,8 +47,9 @@ struct smd_kfbone {
 	~smd_kfbone() {}
 
 	int parent_id;
-	smd_vec3 position;
-	smd_vec3 rotation;
+	glm::vec3 position;
+	glm::vec3 rotation;
+	glm::mat4x4 matrix;
 };
 
 /* bone hierarchy */
@@ -58,9 +74,9 @@ struct smd_weight {
 };
 
 struct smd_vertex {
-	smd_vec3 vertex;
-	smd_vec3 normal;
-	smd_vec2 uv;
+	glm::vec3 vertex;
+	glm::vec3 normal;
+	glm::vec2 uv;
 
 	int num_weights;
 	smd_weight weights[MAX_WEIGHTS];

@@ -51,7 +51,7 @@ bool smd_next_token_float(float *p_dst_float, char **p_tokptr, int delim)
 	return true;
 }
 
-bool smd_next_token_vector(smd_vec3 *p_dst_vector, char **p_tokptr, int delim)
+bool smd_next_token_vector(glm::vec3 *p_dst_vector, char **p_tokptr, int delim)
 {
 	return smd_next_token_float(&p_dst_vector->x, p_tokptr, delim) &&
 		smd_next_token_float(&p_dst_vector->y, p_tokptr, delim) &&
@@ -101,6 +101,16 @@ bool smd_vertex_exists(smd_mesh *p_mesh, int *p_dst_idx, smd_vertex &_vtx_ref)
 	}
 	return false;
 }
+
+//void CalcJointMatrix(smd_kfbone& joint, smd_anim_keyframe& frame)
+//{
+//	glm::mat4 translate = glm::translate(glm::mat4(1.0f), frame.positions[joint.parent_id].position);
+//	glm::mat4 rotate_x = glm::rotate(glm::mat4(1.0f), glm::radians(frame.positions[joint.parent_id].position.x), glm::vec3(1.0f, 0.0f, 0.0f));
+//	glm::mat4 rotate_y = glm::rotate(glm::mat4(1.0f), glm::radians(frame.positions[joint.parent_id].position.y), glm::vec3(0.0f, 1.0f, 0.0f));
+//	glm::mat4 rotate_z = glm::rotate(glm::mat4(1.0f), glm::radians(frame.positions[joint.parent_id].position.z), glm::vec3(0.0f, 0.0f, 1.0f));
+//	glm::mat4 transform = translate * rotate_z * rotate_y * rotate_x;
+//	joint.matrix = joint.parent_id != -1 ? joints[joint.parent_id].matrix * transform : transform;
+//}
 
 int smd_load_model(smd_model *p_dst_smdmodel, const char *p_smdpath)
 {
@@ -279,8 +289,8 @@ int smd_load_model(smd_model *p_dst_smdmodel, const char *p_smdpath)
 							if (!(smd_next_token_int(&parent, &p_tokptr, ' ') &&
 								smd_next_token_vector(&vert.vertex, &p_tokptr, ' ') &&
 								smd_next_token_vector(&vert.normal, &p_tokptr, ' ') &&
-								smd_next_token_float(&vert.uv.u, &p_tokptr, ' ') &&
-								smd_next_token_float(&vert.uv.v, &p_tokptr, ' '))) {
+								smd_next_token_float(&vert.uv.x, &p_tokptr, ' ') &&
+								smd_next_token_float(&vert.uv.y, &p_tokptr, ' '))) {
 
 								fclose(fp);
 								return SMDLDR_STATUS_INVALID_LINE;
