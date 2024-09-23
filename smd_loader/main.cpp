@@ -156,36 +156,37 @@ void fn_draw()
 	//	glVertexPointer(3, GL_FLOAT, sizeof(smd_vertex), ((const char *)model.meshes[i].vertices.data() + offsetof(smd_vertex, vertex)));
 	//	glNormalPointer(GL_FLOAT, sizeof(smd_vertex), ((const char *)model.meshes[i].vertices.data() + offsetof(smd_vertex, normal)));
 	//	glDrawArrays(GL_TRIANGLES, 0, model.meshes[i].vertices.size());
+	//	assert(glGetError() == GL_NO_ERROR);
 	//}
 
-	glPushAttrib(GL_CURRENT_BIT);
-	glColor3f(0.0f, 1.0f, 0.0f);
+	//glPushAttrib(GL_CURRENT_BIT);
+	//glColor3f(0.0f, 1.0f, 0.0f);
 
-	glPointSize(5.0);
-	glBegin(GL_POINTS);
-	for (size_t i = 0; i < model.hierarchy.size(); i++) {
-		smd_kfbone &bone = model.keyframes[0].positions[i];
-			glm::vec3 wpos = bone_world_position3(&model, 0, i);
-			glVertex3fv(glm::value_ptr(wpos));
-	}
-	glEnd();
-	glPointSize(1.f);
+	//glPointSize(5.0);
+	//glBegin(GL_POINTS);
+	//for (size_t i = 0; i < model.hierarchy.size(); i++) {
+	//	smd_kfbone &bone = model.keyframes[0].positions[i];
+	//		glm::vec3 wpos = bone_world_position3(&model, 0, i);
+	//		glVertex3fv(glm::value_ptr(wpos));
+	//}
+	//glEnd();
+	//glPointSize(1.f);
 
 	//glm::mat4x4 world_matrix;
 	//glLoadMatrixf((float *)&world_matrix);
 
 	//drawBone(&model, 0, 0);
-	glPopAttrib();
+	//glPopAttrib();
 
-	//glEnableClientState(GL_VERTEX_ARRAY);
-	//glEnableClientState(GL_NORMAL_ARRAY);
-	//for (int i = 0; i < model.meshes.size(); i++) {
-	//	glVertexPointer(3, GL_FLOAT, sizeof(smd_vertex), ((const char *)model.meshes[i].vertices.data() + offsetof(smd_vertex, vertex)));
-	//	glNormalPointer(GL_FLOAT, sizeof(smd_vertex), ((const char *)model.meshes[i].vertices.data() + offsetof(smd_vertex, normal)));
-	//	glDrawElements(GL_TRIANGLES, model.meshes[i].triangles.size(), GL_UNSIGNED_INT, model.meshes[i].triangles.data());
-	//}
-	//glDisableClientState(GL_VERTEX_ARRAY);
-	//glDisableClientState(GL_NORMAL_ARRAY);
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glEnableClientState(GL_NORMAL_ARRAY);
+	for (int i = 0; i < model.meshes.size(); i++) {
+		glVertexPointer(3, GL_FLOAT, sizeof(smd_vertex), ((const char *)model.meshes[i].vertices.data() + offsetof(smd_vertex, vertex)));
+		glNormalPointer(GL_FLOAT, sizeof(smd_vertex), ((const char *)model.meshes[i].vertices.data() + offsetof(smd_vertex, normal)));
+		glDrawElements(GL_TRIANGLES, model.meshes[i].triangles.size(), GL_UNSIGNED_INT, model.meshes[i].triangles.data());
+	}
+	glDisableClientState(GL_VERTEX_ARRAY);
+	glDisableClientState(GL_NORMAL_ARRAY);
 }
 
 void fn_window_resize(HWND hWnd, int width, int height)

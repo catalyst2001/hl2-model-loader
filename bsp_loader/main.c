@@ -1,4 +1,5 @@
 ﻿#include <stdio.h>
+#include <stdint.h>
 #include "vbsp.h"
 
 // 
@@ -328,6 +329,8 @@ void fn_charinput(HWND hWnd, char symbol)
 
 float anglex = 0.f;
 float angley = 0.f;
+vec3_t* p_verts;
+uint32_t num_verts = 0;
 
 //https://docs.microsoft.com/ru-ru/windows/win32/inputdev/wm-keydown
 void fn_keydown(HWND hWnd, INT state, WPARAM wparam, LPARAM lparam)
@@ -386,19 +389,24 @@ void fn_draw()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glLoadIdentity();
 
-	//glVertexPointer(3, GL_FLOAT, 0, p_verts);
-	//glDrawElements(GL_LINES, num_of_edges, GL_UNSIGNED_INT, p_edges);
-
-	glTranslatef(0.f, 0.f, 0.f);
+	glTranslatef(0.f, 0.f, -350.f);
 	glRotatef(anglex, 1.f, 0.f, 0.f);
 	glRotatef(angley, 0.f, 1.f, 0.f);
 
-	glBegin(GL_LINES);
-	for (int i = 0; i < num_of_edges; i++) {
-		glVertex3fv((float *)&p_verts[p_edges[i].v[0]]);
-		glVertex3fv((float *)&p_verts[p_edges[i].v[1]]);
-	}
-	glEnd();
+	glPointSize(2.f);
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glVertexPointer(3, GL_FLOAT, 0, p_verts);
+	glDrawArrays(GL_POINTS, 0, num_verts);
+	glDisableClientState(GL_VERTEX_ARRAY);
+
+
+
+	//glBegin(GL_LINES);
+	//for (int i = 0; i < num_of_edges; i++) {
+	//	glVertex3fv((float *)&p_verts[p_edges[i].v[0]]);
+	//	glVertex3fv((float *)&p_verts[p_edges[i].v[1]]);
+	//}
+	//glEnd();
 }
 
 bool bsp_generate_triangle_mesh(vec3_t **p_vertex_buffer, unsigned int *p_indices_buffer, size_t *p_dst_indices_buf_size, const bsp_t *p_bsp)
@@ -427,7 +435,7 @@ bool bsp_generate_triangle_mesh(vec3_t **p_vertex_buffer, unsigned int *p_indice
 		/* write indices */
 		*p_dst_indices_buf_size = p_face->numedges;
 		unsigned int *p_idx_buffer = (unsigned int *)malloc(p_face->numedges * sizeof(unsigned int));
-		if (!(*p_idx_buffer)) {
+		if (!p_idx_buffer) {
 			printf("indices buffer allocation failed\n");
 			return false;
 		}
@@ -456,17 +464,18 @@ int main()
 	}
 
 	bsp_t *p_bsp = &bsp;
+	printf("BSP version: %d\n", p_bsp->p_header->version);
 
 	/* edges */
 	//lump_t *p_edges_lmp = bsp_lump(p_bsp, LUMP_EDGES);
 	//p_edges = bsp_lump_data(p_bsp, p_edges_lmp);
 	//num_of_edges = p_edges_lmp->filelen / sizeof(dedge_t);
 
-	//lump_t *p_vertexes_lmp = bsp_lump(p_bsp, LUMP_VERTEXES);
-	//p_verts = bsp_lump_data(p_bsp, p_vertexes_lmp);
-	//num_of_vertices = p_vertexes_lmp->filelen / sizeof(vec3_t);
+	lump_t *p_vertexes_lmp = bsp_lump(p_bsp, LUMP_VERTEXES);
+	p_verts = bsp_lump_data(p_bsp, p_vertexes_lmp);
+	num_verts = p_vertexes_lmp->filelen / sizeof(vec3_t);
 
-	//bsp_dump_info(&bsp);
+	bsp_dump_info(&bsp);
 
 
 	create_window("Half-Life 2  BSP loading test", __FILE__ __TIME__,

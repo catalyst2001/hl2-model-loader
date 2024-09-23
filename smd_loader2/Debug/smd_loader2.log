@@ -1,0 +1,3 @@
+﻿  smd_loader2.cpp
+E:\GITHUB\hl2-model-loader\smd_loader2\smd_loader2.cpp(112,20): warning C4018: <: несоответствие типов со знаком и без знака
+  smd_loader2.vcxproj -> E:\GITHUB\hl2-model-loader\Debug\smd_loader2.exe

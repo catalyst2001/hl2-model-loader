@@ -1,0 +1,36 @@
+﻿  main.c
+E:\GITHUB\hl2-model-loader\bsp_loader\main.c(14,9): warning C4047: инициализация: "char *" отличается по уровням косвенного обращения от "size_t"
+E:\GITHUB\hl2-model-loader\bsp_loader\main.c(33,13): warning C4101: j: неиспользованная локальная переменная
+E:\GITHUB\hl2-model-loader\bsp_loader\main.c(207,25): warning C4018: >=: несоответствие типов со знаком и без знака
+E:\GITHUB\hl2-model-loader\bsp_loader\main.c(279,11): warning C4047: инициализация: "dedge_t *" отличается по уровням косвенного обращения от "size_t"
+E:\GITHUB\hl2-model-loader\bsp_loader\glwnd.h(296,48): warning C4047: функция: "DWORD" отличается по уровням косвенного обращения от "void *"
+  (компиляция исходного файла "main.c")
+  
+E:\GITHUB\hl2-model-loader\bsp_loader\glwnd.h(296,48): warning C4024: CreateWindowExA: различные типы для формального и фактического параметров 1
+  (компиляция исходного файла "main.c")
+  
+E:\GITHUB\hl2-model-loader\bsp_loader\glwnd.h(354,32): warning C4047: функция: "UINT" отличается по уровням косвенного обращения от "void *"
+  (компиляция исходного файла "main.c")
+  
+E:\GITHUB\hl2-model-loader\bsp_loader\glwnd.h(354,32): warning C4024: PeekMessageA: различные типы для формального и фактического параметров 3
+  (компиляция исходного файла "main.c")
+  
+E:\GITHUB\hl2-model-loader\bsp_loader\glwnd.h(354,38): warning C4047: функция: "UINT" отличается по уровням косвенного обращения от "void *"
+  (компиляция исходного файла "main.c")
+  
+E:\GITHUB\hl2-model-loader\bsp_loader\glwnd.h(354,38): warning C4024: PeekMessageA: различные типы для формального и фактического параметров 4
+  (компиляция исходного файла "main.c")
+  
+E:\GITHUB\hl2-model-loader\bsp_loader\main.c(346,14): warning C4305: +=: усечение из "double" в "float"
+E:\GITHUB\hl2-model-loader\bsp_loader\main.c(350,14): warning C4305: -=: усечение из "double" в "float"
+E:\GITHUB\hl2-model-loader\bsp_loader\main.c(354,14): warning C4305: -=: усечение из "double" в "float"
+E:\GITHUB\hl2-model-loader\bsp_loader\main.c(358,14): warning C4305: +=: усечение из "double" в "float"
+E:\GITHUB\hl2-model-loader\bsp_loader\main.c(443,21): warning C4047: =: "unsigned int" отличается по уровням косвенного обращения от "unsigned int *"
+E:\GITHUB\hl2-model-loader\bsp_loader\main.c(444,24): warning C4018: <: несоответствие типов со знаком и без знака
+E:\GITHUB\hl2-model-loader\bsp_loader\main.c(451,24): warning C4018: <: несоответствие типов со знаком и без знака
+E:\GITHUB\hl2-model-loader\bsp_loader\main.c(419,11): warning C4047: инициализация: "dface_t *" отличается по уровням косвенного обращения от "size_t"
+E:\GITHUB\hl2-model-loader\bsp_loader\main.c(423,11): warning C4047: инициализация: "dedge_t *" отличается по уровням косвенного обращения от "size_t"
+E:\GITHUB\hl2-model-loader\bsp_loader\main.c(427,10): warning C4047: инициализация: "vec3_t *" отличается по уровням косвенного обращения от "size_t"
+E:\GITHUB\hl2-model-loader\bsp_loader\main.c(475,10): warning C4047: =: "vec3_t *" отличается по уровням косвенного обращения от "size_t"
+E:\GITHUB\hl2-model-loader\bsp_loader\main.c(455,1): warning C4715: bsp_generate_triangle_mesh: значение возвращается не при всех путях выполнения
+  bsp_loader.vcxproj -> E:\GITHUB\hl2-model-loader\Debug\bsp_loader.exe
